@@ -4,6 +4,9 @@ package com.heliossoftwaredeveloper.heliosandroidfundamentals.Notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.heliossoftwaredeveloper.heliosandroidfundamentals.Notification.NotificationActivity.Companion.NOTIFICATION_ACTION_CLICKED
+import com.heliossoftwaredeveloper.heliosandroidfundamentals.Notification.NotificationActivity.Companion.NOTIFICATION_ACTION_DELETE
+import com.heliossoftwaredeveloper.heliosandroidfundamentals.Notification.NotificationActivity.Companion.NOTIFICATION_ACTION_UPDATE
 
 /**
  * Created by Ruel N. Grajo on 06/24/2019.
@@ -16,10 +19,16 @@ class NotificationReceiver(notificationReceiverCallback : NotificationReceiverCa
     val mNotificationReceiverCallback = notificationReceiverCallback
 
     override fun onReceive(context: Context, intent: Intent) {
-        mNotificationReceiverCallback.onNotificationActionClicked(intent)
+        when (intent.action) {
+            NOTIFICATION_ACTION_UPDATE -> mNotificationReceiverCallback.onNotificationUpdateActionClicked()
+            NOTIFICATION_ACTION_DELETE -> mNotificationReceiverCallback.onNotificationDeleted()
+            NOTIFICATION_ACTION_CLICKED -> mNotificationReceiverCallback.onNotificationClicked()
+        }
     }
 
     interface NotificationReceiverCallback {
-        fun onNotificationActionClicked(intent: Intent)
+        fun onNotificationUpdateActionClicked()
+        fun onNotificationDeleted()
+        fun onNotificationClicked()
     }
 }

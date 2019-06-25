@@ -6,7 +6,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -17,6 +16,7 @@ import android.support.v4.app.NotificationCompat
 import android.view.View
 import com.heliossoftwaredeveloper.heliosandroidfundamentals.R
 import kotlinx.android.synthetic.main.activity_notification.*
+import android.content.Intent
 
 /**
  * Created by Ruel N. Grajo on 06/24/2019.
@@ -34,8 +34,10 @@ class NotificationActivity : AppCompatActivity(), View.OnClickListener, Notifica
         setContentView(R.layout.activity_notification)
 
         receiver = NotificationReceiver(this)
-
+        //register intent action to receiver
         registerReceiver(receiver, IntentFilter(NOTIFICATION_ACTION_UPDATE))
+        registerReceiver(receiver, IntentFilter(NOTIFICATION_ACTION_DELETE))
+        registerReceiver(receiver, IntentFilter(NOTIFICATION_ACTION_CLICKED))
 
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
@@ -65,8 +67,17 @@ class NotificationActivity : AppCompatActivity(), View.OnClickListener, Notifica
         }
     }
 
-    override fun onNotificationActionClicked(intent: Intent) {
+    override fun onNotificationUpdateActionClicked() {
         updateNotification()
+    }
+
+    override fun onNotificationDeleted() {
+        setNotificationButtonState(true, false, false)
+    }
+
+    override fun onNotificationClicked() {
+        startActivity(newIntent(this))
+        finish()
     }
 
     /**
@@ -76,7 +87,8 @@ class NotificationActivity : AppCompatActivity(), View.OnClickListener, Notifica
         val updatePendingIntent = PendingIntent.getBroadcast(this, NOTIFICATION_ID, Intent(NOTIFICATION_ACTION_UPDATE), PendingIntent.FLAG_ONE_SHOT)
 
         val notificationBilder = getNotificationBuilder()
-        notificationBilder.addAction(R.drawable.ic_action_update, resources.getString(R.string.notification_action_title_update), updatePendingIntent)
+        notificationBilder.addAction(R.drawable.ic_action_update, resources.getString(R.string.notification_action_title_update),
+                updatePendingIntent)
         notificationManager.notify(NOTIFICATION_ID, notificationBilder.build())
         setNotificationButtonState(false, true, true)
     }
@@ -131,14 +143,17 @@ class NotificationActivity : AppCompatActivity(), View.OnClickListener, Notifica
      **/
     private fun getNotificationBuilder() : NotificationCompat.Builder {
         //set the pending intent to start NotificationActivity when the user clicked the notification
-        val notificationPendingIntent = PendingIntent.getActivity(this, NOTIFICATION_ID, newIntent(this), PendingIntent.FLAG_UPDATE_CURRENT)
+        val notificationPendingIntent = PendingIntent.getBroadcast(this, NOTIFICATION_ID, Intent(NOTIFICATION_ACTION_CLICKED),0)
+
+        val deleteNotificationPendingIntent = PendingIntent.getBroadcast(this, NOTIFICATION_ID, Intent(NOTIFICATION_ACTION_DELETE), 0)
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setContentTitle(resources.getString(R.string.notification_title))
                 .setContentText(resources.getString(R.string.notification_message))
                 .setContentIntent(notificationPendingIntent)
-                .setAutoCancel(true)
+                .setDeleteIntent(deleteNotificationPendingIntent)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setAutoCancel(false)
                 //for backward compatibility, android 7.1 and below we need to set the priority here. For 8.0 up it is already set on notification channel
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 //Setting the priority is not enough for 7.1 and below, we also need to set defaults.
@@ -149,7 +164,9 @@ class NotificationActivity : AppCompatActivity(), View.OnClickListener, Notifica
         private const val NOTIFICATION_CHANNEL_ID = "helios_notification_channel"
         private const val NOTIFICATION_CHANNEL_NAME = "Helios Notification"
         private const val NOTIFICATION_CHANNEL_DESCRIPTION = "Notification from Helios"
-        private const val NOTIFICATION_ACTION_UPDATE = "com.heliossoftwaredeveloper.heliosandroidfundamentals.ACTION_UPDATE_NOTIFICATION"
+        const val NOTIFICATION_ACTION_UPDATE = "com.heliossoftwaredeveloper.heliosandroidfundamentals.ACTION_UPDATE_NOTIFICATION"
+        const val NOTIFICATION_ACTION_DELETE = "com.heliossoftwaredeveloper.heliosandroidfundamentals.ACTION_DELETE_NOTIFICATION"
+        const val NOTIFICATION_ACTION_CLICKED = "com.heliossoftwaredeveloper.heliosandroidfundamentals.ACTION_CLICKED_NOTIFICATION"
         private const val NOTIFICATION_ID = 0
 
         /**
